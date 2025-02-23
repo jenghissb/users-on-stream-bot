@@ -235,7 +235,7 @@ while True:
               subtext1 = "-# Feel free to make a thread to provide unsolicited vod review and discussion or use the channel."
               subtext2 = "-# Don't @ someone after or during their set."
               subtext3 = "-# Don't @ a competitor with the feedback unless they're open to it"
-              subtext4 = "-# {subtextStr}"
+              subtext4 = f"-# {subtextStr}"
               message = json.dumps({"content": f"{mention}\n{header}\n# **{name1}** vs **{name2}**\n{streamUrl}\n{url}\n{subtext1}\n{subtext2}\n{subtext3}\n{subtext4}"})
               r = requests.post(f"https://discordapp.com/api/channels/{discordChannelId}/messages", headers=discordHeaders, data=message)
               statuscode = r.status_code
