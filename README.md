@@ -40,3 +40,5 @@ At time of writing, you can setup the discord bot like this, with a guild instal
 
 ![Discord bot auth2](images/ExOauth2.png)
 
+For a bot to mention a discord role it needs the id, get this by copying the text of a sent message, it will look like "<@&0000000000000000000>"
+

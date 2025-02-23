@@ -4,5 +4,7 @@
   "recencyIntervalDays": 4,
   "startggToken": "your_start_gg_token_here",
   "discordBotToken": "your_discord_bot_token_here",
-  "discordChannelId": "your_channel_id_here"
+  "discordChannelId": "your_channel_id_here",
+  "roleMention": "<@&0000000000000000000>",
+  "subtext4str": "Remember to be kind and respectful to fellow competitors"
 }
