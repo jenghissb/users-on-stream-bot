@@ -1,4 +1,3 @@
-from execute_query import excecute_query
 from string_query import string_query
 import json
 import re
@@ -67,22 +66,92 @@ while True:
     slug = userSlugs[name]
     querystrings.append(f'  slug{slug}:user(slug:"{slug}") {{')
     querystrings.append("    id")
+    querystrings.append("    discriminator")
     querystrings.append("    player{")
     querystrings.append("      id")
     querystrings.append("      gamerTag")
+    querystrings.append(f"      sets(perPage: {setsPerPage}, page: 1, filters:{{state: [2]}}) {{")
+    querystrings.append("        pageInfo {")
+    querystrings.append("          total")
+    querystrings.append("          filter")
+    querystrings.append("          totalPages")
+    querystrings.append("        }")
+    querystrings.append("        nodes {")
+    querystrings.append("          id")
+    querystrings.append("          completedAt")
+    querystrings.append("          identifier")
+    querystrings.append("          startAt")
+    querystrings.append("          state")
+    querystrings.append("          stream {")
+    querystrings.append("            id")
+    querystrings.append("            enabled")
+    querystrings.append("            isOnline")
+    querystrings.append("            parentStreamId")
+    querystrings.append("            streamId")
+    querystrings.append("            streamLogo")
+    querystrings.append("            streamName")
+    querystrings.append("            streamType")
+    querystrings.append("            streamSource")
+    querystrings.append("            streamType")
+    querystrings.append("            streamTypeId")
+    querystrings.append("            streamStatus")
+    querystrings.append("            numSetups")
+    querystrings.append("          }")
+    querystrings.append("          event {")
+    querystrings.append("            name")
+    querystrings.append("            slug")
+    querystrings.append("            startAt")
+    querystrings.append("          }")
+    querystrings.append("          slots(includeByes: false) {")
+    querystrings.append("            entrant {")
+    querystrings.append("              id")
+    querystrings.append("              name")
+    querystrings.append("              participants {")
+    querystrings.append("                player {")
+    querystrings.append("                  id")
+    querystrings.append("                  user {")
+    querystrings.append("                    id")
+    querystrings.append("                  }")
+    querystrings.append("                }")
+    querystrings.append("              }")
+    querystrings.append("            }")
+    querystrings.append("          }")
+    querystrings.append("          games {")
+    querystrings.append("            id")
+    querystrings.append("            selections {")
+    querystrings.append("              selectionType")
+    querystrings.append("              selectionValue")
+    querystrings.append("              entrant {")
+    querystrings.append("                id")
+    querystrings.append("                name")
+    querystrings.append("                participants {")
+    querystrings.append("                  player {")
+    querystrings.append("                    gamerTag")
+    querystrings.append("                    id")
+    querystrings.append("                  }")
+    querystrings.append("                }")
+    querystrings.append("              }")
+    querystrings.append("            }")
+    querystrings.append("          }")
+    querystrings.append("          vodUrl")
+    querystrings.append("          winnerId")
+    querystrings.append("          fullRoundText")
+    querystrings.append("          wPlacement")
+    querystrings.append("          lPlacement")
+    querystrings.append("          displayScore")
+    querystrings.append("        }")
+    querystrings.append("      }")
     querystrings.append("    }")
     querystrings.append("  }")
   querystrings.append("}")
   querystring = "\n".join(querystrings)
-  print(querystring)
+  #print(querystring)
   data = string_query(querystring, {}, startggHeaders)
-  print(data)
   if "data" not in data:
       print(data)
       time.sleep(sleepInterval)
       continue
   users = list(data["data"].values())
-  print(users)
   time.sleep(sleepInterval)
   for user in users:
     print("User:", user)
@@ -95,21 +164,18 @@ while True:
     setNodes = None
     charValueCounts = {}
     eventIds = []
-    setsData = excecute_query("query_stream_sets.gql", {"pID": playerId, "tournamentList": eventIds, "perPage": setsPerPage, "page": 1}, startggHeaders)
-    if setsData is None:
-      time.sleep(sleepInterval)
+
+    if "player" not in user:
       continue
-    print("setsData", setsData)
-    time.sleep(sleepInterval)
-    if "data" not in setsData:
-      setsData = excecute_query("query_stream_sets.gql", {"pID": playerId, "tournamentList": eventIds, "perPage": setsPerPage, "page": 1}, startggHeaders)
-      time.sleep(sleepInterval)
-    if "data" not in setsData:
-      print("data not in setsData")
-      time.sleep(sleepInterval)
-      continue      
-    numPages = setsData["data"]["player"]["sets"]["pageInfo"]["totalPages"]
-    setNodes = setsData["data"]["player"]["sets"]["nodes"]
+    player = user["player"]
+    if "sets" not in player:
+      continue
+    sets = player["sets"]
+    if sets is None:
+      continue
+
+    numPages = sets["pageInfo"]["totalPages"]
+    setNodes = sets["nodes"]
     local_timezone = tzlocal.get_localzone()
     date_format = '%Y-%m-%d %I:%M %p (%Z)'
     recencyInterval = 60*60*24*recencyIntervalDays #filters out active sets that were never reported
@@ -119,12 +185,15 @@ while True:
       fullRoundText = setNode["fullRoundText"]
       slots = setNode["slots"]
       event = setNode["event"]
-      wslot = slots[0]
-      lslot = slots[1]
+      slot1 = slots[0]
+      slot2 = slots[1]
       setid = setNode["id"]
-      if slots[1]["entrant"]["id"] == winnerId:
-        wslot = slots[1]
-        lslot = slots[0]
+      entrant1 = slot1["entrant"]
+      entrant2 = slot2["entrant"]
+      if entrant1 is None:
+        continue
+      if entrant2 is None:
+        continue
       print(setNode)
       if winnerId == None:
         stream = setNode["stream"]
@@ -142,8 +211,8 @@ while True:
             else:
               streamUrl = f"{streamSource}: {streamName}"
         if streamUrl is not None:
-          name = wslot["entrant"]["name"]
-          name2 = lslot["entrant"]["name"]
+          name1 = slot1["entrant"]["name"]
+          name2 = slot2["entrant"]["name"]
           eventslug = event["slug"]
           slug = re.sub("/event/.+", "", eventslug)
           url = "https://www.start.gg/" + slug
@@ -160,15 +229,16 @@ while True:
             if result is None:
               setfoundtime = time.time()
               cur.executescript(f"INSERT INTO tourneyset VALUES({setfoundtime}, {setid})")
-              print(name + " vs " + name2, fullRoundText, startsatstr, streamUrl, url, sep=', ')
+              print(name1 + " vs " + name2, fullRoundText, startsatstr, streamUrl, url, sep=', ')
               mention = roleMention
               header = f"## On Stream: {fullRoundText}"
               subtext1 = "-# Feel free to make a thread to provide unsolicited vod review and discussion or use the channel."
               subtext2 = "-# Don't @ someone after or during their set."
               subtext3 = "-# Don't @ a competitor with the feedback unless they're open to it"
               subtext4 = "-# {subtextStr}"
-              message = json.dumps({"content": f"{mention}\n{header}\n# **{name}** vs **{name2}**\n{streamUrl}\n{url}\n{subtext1}\n{subtext2}\n{subtext3}\n{subtext4}"})
+              message = json.dumps({"content": f"{mention}\n{header}\n# **{name1}** vs **{name2}**\n{streamUrl}\n{url}\n{subtext1}\n{subtext2}\n{subtext3}\n{subtext4}"})
               r = requests.post(f"https://discordapp.com/api/channels/{discordChannelId}/messages", headers=discordHeaders, data=message)
               statuscode = r.status_code
               print(f"status code: {statuscode}")
+              time.sleep(sleepInterval)
 
