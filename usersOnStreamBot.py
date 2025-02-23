@@ -23,6 +23,8 @@ recencyIntervalDays = config["recencyIntervalDays"]
 startggToken = config["startggToken"]
 discordBotToken = config["discordBotToken"]
 discordChannelId = config["discordChannelId"]
+roleMention = config["roleMention"]
+subtextStr = config["subtextStr"]
 startggHeaders = {"Authorization": f"Bearer {startggToken}"}
 discordHeaders = {
   "Authorization": f"Bot {discordBotToken}",
@@ -159,12 +161,12 @@ while True:
               setfoundtime = time.time()
               cur.executescript(f"INSERT INTO tourneyset VALUES({setfoundtime}, {setid})")
               print(name + " vs " + name2, fullRoundText, startsatstr, streamUrl, url, sep=', ')
-              mention = "@Belmont Clan "
+              mention = roleMention
               header = f"## On Stream: {fullRoundText}"
               subtext1 = "-# Feel free to make a thread to provide unsolicited vod review and discussion or use the channel."
               subtext2 = "-# Don't @ someone after or during their set."
               subtext3 = "-# Don't @ a competitor with the feedback unless they're open to it"
-              subtext4 = "-# Remember to be kind and respectful to fellow vanquishers of darkness"
+              subtext4 = "-# {subtextStr}"
               message = json.dumps({"content": f"{mention}\n{header}\n# **{name}** vs **{name2}**\n{streamUrl}\n{url}\n{subtext1}\n{subtext2}\n{subtext3}\n{subtext4}"})
               r = requests.post(f"https://discordapp.com/api/channels/{discordChannelId}/messages", headers=discordHeaders, data=message)
               statuscode = r.status_code
