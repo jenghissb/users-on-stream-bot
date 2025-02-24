@@ -17,7 +17,6 @@ else:
     config = json.load(file)
 print(config)
 numSavedSets = config["numSavedSets"]
-sleepInterval = config["sleepInterval"]
 recencyIntervalDays = config["recencyIntervalDays"]
 startggToken = config["startggToken"]
 discordBotToken = config["discordBotToken"]
@@ -30,6 +29,7 @@ discordHeaders = {
   "Content-Type": "application/json"
 }
 setsPerPage = 40
+apiInterval = 0.8
 
 con = sqlite3.connect("current_sets.db")
 cur = con.cursor()
@@ -47,6 +47,7 @@ try:
 except:
   print("")
 
+api_timestamp = 0
 while True:
   if os.path.isfile('localUserSlugs.json'):
     with open('localUserSlugs.json', 'r') as file:
@@ -60,6 +61,7 @@ while True:
   #TODO: batch sets queries while staying under start.gg object limit
   #slugs = [slug for slug in userSlugs.values()[:5]]
   names = []
+  count = 0
   for key in userSlugs:
     names.append(key)
   for name in names:
@@ -145,14 +147,22 @@ while True:
     querystrings.append("  }")
   querystrings.append("}")
   querystring = "\n".join(querystrings)
-  #print(querystring)
+  new_timestamp = time.time()
+  time_diff = new_timestamp - api_timestamp
+  api_timestamp = new_timestamp
+  print("time_diff:", time_diff)
+  if api_timestamp != 0 and time_diff < apiInterval:
+    print("sleep:", apiInterval - time_diff)
+    time.sleep(apiInterval - time_diff)
+
   data = string_query(querystring, {}, startggHeaders)
-  if "data" not in data:
+  if data is None or "data" not in data:
       print(data)
-      time.sleep(sleepInterval)
       continue
+  after_timestamp = time.time()
+  print("api_time:", after_timestamp - api_timestamp)
+
   users = list(data["data"].values())
-  time.sleep(sleepInterval)
   for user in users:
     print("User:", user)
     try:
@@ -240,5 +250,4 @@ while True:
               r = requests.post(f"https://discordapp.com/api/channels/{discordChannelId}/messages", headers=discordHeaders, data=message)
               statuscode = r.status_code
               print(f"status code: {statuscode}")
-              time.sleep(sleepInterval)
 
